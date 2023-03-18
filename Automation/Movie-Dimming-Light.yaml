@@ -1,0 +1,68 @@
+blueprint:
+  name: Movie-Dimming
+  description: "Change lights when playing a movie and change it when on paused/stop"
+  domain: automation
+  source_url: http://localhost
+  input:
+    movie_player:
+      name: Movie Player
+      selector:
+        entity:
+          domain: media_player
+    light_target:
+      name: Light
+      selector:
+        target:
+          entity:
+            domain: light
+    start_light_color:
+      name: Playing Color
+      selector:
+        color_rgb:
+    start_light_color_bright:
+      name: Playing Color Brightness
+      selector:
+        number:
+          min: 1
+          max: 255
+          mode: slider
+    stop_light_color:
+      name: Stop Color
+      selector:
+        color_rgb:
+    stop_light_color_bright:
+      name: Stop Color Brightness
+      selector:
+        number:
+          min: 1
+          max: 255
+          mode: slider
+
+# If motion is detected within the delay,
+# we restart the script.
+mode: restart
+max_exceeded: silent
+
+trigger:
+  platform: state
+  entity_id: !input movie_player
+  to: "playing"
+
+action:
+  - alias: "Movie Starting"
+    service: light.turn_on
+    data:
+      brightness: !input start_light_color_bright
+      rgb_color: !input start_light_color
+    target: !input light_target
+  - alias: "Wait until you stop/pause the movie"
+    wait_for_trigger:
+      platform: state
+      entity_id: !input movie_player
+      from: "playing"
+  - alias: "Turn off the light"
+    service: light.turn_off
+    data:
+      brightness: !input stop_light_color_bright
+      rgb_color: !input stop_light_color
+    target: !input light_target
